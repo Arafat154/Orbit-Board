@@ -613,7 +613,13 @@ public final class InputLogic {
         // should be true, but that is if the framework had taken that wrong cursor position
         // into account, which means we have to reset the entire composing state whenever there
         // is or was a selection regardless of whether it changed or not.
+        // In Bangla (Avro) typing, the word on screen is converted from the Latin letters typed so
+        // far. If the person taps inside that word we must end the composition right there. Keeping
+        // it going would redraw the whole word on the next key press and throw the cursor to the end.
+        final boolean avroCursorMovedByUser = isAvroActive() && mWordComposer.isComposingWord()
+                && (oldSelStart != newSelStart || oldSelEnd != newSelEnd);
         if (hasOrHadSelection || !settingsValues.needsToLookupSuggestions()
+                || avroCursorMovedByUser
                 || (selectionChangedOrSafeToReset
                         && !mWordComposer.moveCursorByAndReturnIfInsideComposingWord(moveAmount))) {
             // If we are composing a word and moving the cursor, we would want to set a
@@ -1916,6 +1922,13 @@ public final class InputLogic {
             final boolean forStartInput,
             // TODO: remove this argument, put it into settingsValues
             final int currentKeyboardScriptId) {
+        // A Bangla word that is already on screen cannot be turned back into the Latin letters
+        // that made it, so it is not re-opened for composing. Editing in the middle of it works
+        // like normal text editing and the cursor stays where it was tapped.
+        if (isAvroActive()) {
+            mSuggestionStripViewAccessor.setNeutralSuggestionStrip();
+            return;
+        }
         // HACK: We may want to special-case some apps that exhibit bad behavior in case of
         // recorrection. This is a temporary, stopgap measure that will be removed later.
         // TODO: remove this.

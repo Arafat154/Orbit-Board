@@ -419,17 +419,14 @@ class BasicThemeProvider(
         val effectiveSpaceColor = customSpaceColor ?: (if(keyBorders) keyColor else highlight)
         val spaceDrawable = if(customSpaceColor != null) {
             coloredRoundedRectangle(effectiveSpaceColor, dp(spaceCornerRadius)).apply {
-                setStroke(dp(1.5.dp).roundToInt(), if (spacebarColorPref == "yellow") OrbitThemeHelper.COLOR_DARK else yellowAccent)
             }
         } else if(keyBorders) {
             coloredRoundedRectangle(keyColor, dp(spaceCornerRadius)).apply {
-                setStroke(dp(1.5.dp).roundToInt(), yellowAccent)
             }
         } else if(expertMode) {
             coloredRoundedRectangle(colorScheme.outline.copy(alpha = 0.1f).toArgb(), dp(spaceCornerRadius))
         } else {
             coloredRoundedRectangle(highlight, dp(spaceCornerRadius)).apply {
-                setStroke(dp(1.5.dp).roundToInt(), yellowAccent)
             }
         }
 
