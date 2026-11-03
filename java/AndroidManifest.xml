@@ -16,6 +16,8 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <!-- Internet is used ONLY by the Translate panel and GIF search, when you tap them. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!--<uses-permission android:name="android.permission.READ_PROFILE"/>--> <!-- ? -->
     <uses-permission android:name="android.permission.READ_USER_DICTIONARY"/>
@@ -36,6 +38,16 @@
          android:allowBackup="true"
          android:largeHeap="true"
          android:name=".CrashLoggingApplication">
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.gifs"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/gif_file_paths" />
+        </provider>
+
 
         <!-- Services -->
         <service android:name=".LatinIME"

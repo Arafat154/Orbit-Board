@@ -138,9 +138,11 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
         final KeyboardLayoutSet.Builder builder = new KeyboardLayoutSet.Builder(
                 mThemeContext, editorInfo);
         final Resources res = mThemeContext.getResources();
-        final int keyboardWidth = ResourceUtils.getDefaultKeyboardWidth(res);
+        final int keyboardWidth = (int)(ResourceUtils.getDefaultKeyboardWidth(res)
+                * org.futo.inputmethod.latin.uix.OneHandedMode.widthFactor(mThemeContext));
         final int keyboardHeight = ResourceUtils.getKeyboardHeight(res, settingsValues);
         builder.setKeyboardGeometry(keyboardWidth, keyboardHeight);
+        applyOneHandedPosition();
         builder.setSubtype(mRichImm.getCurrentSubtype());
         builder.setVoiceInputKeyEnabled(settingsValues.mShowsVoiceInputKey);
         builder.setBottomActionKey(settingsValues.mShowsActionKey, settingsValues.mActionKeyId);
@@ -154,6 +156,21 @@ public final class KeyboardSwitcher implements KeyboardState.SwitchActions {
             mKeyboardTextsSet.setLocale(mRichImm.getCurrentSubtypeLocale(), mThemeContext);
         } catch (KeyboardLayoutSetException e) {
             Log.w(TAG, "loading keyboard failed: " + e.mKeyboardId, e.getCause());
+        }
+    }
+
+    /** Puts the (possibly narrower) keyboard against the left or right edge for one-handed use. */
+    private void applyOneHandedPosition() {
+        if (mMainKeyboardFrame == null) return;
+        final android.view.ViewGroup.LayoutParams params = mMainKeyboardFrame.getLayoutParams();
+        if (params instanceof android.widget.FrameLayout.LayoutParams) {
+            final int gravity = org.futo.inputmethod.latin.uix.OneHandedMode.frameGravity(mThemeContext);
+            final android.widget.FrameLayout.LayoutParams frameParams =
+                    (android.widget.FrameLayout.LayoutParams) params;
+            if (frameParams.gravity != gravity) {
+                frameParams.gravity = gravity;
+                mMainKeyboardFrame.setLayoutParams(frameParams);
+            }
         }
     }
 

@@ -73,6 +73,8 @@ class AnnouncementManager(private val context: Context) {
     }
 
     private fun fetchFromUrl(urlString: String): Announcement? {
+        // Announcements are switched off in this build.
+        if (urlString.isNotEmpty()) return null
         return runCatching {
             val url = URL(urlString)
             val conn = (url.openConnection() as HttpURLConnection).apply {

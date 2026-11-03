@@ -10,26 +10,9 @@ package org.futo.inputmethod.latin.blocklist
 data class BlockedEntry(val word: String, val matchInside: Boolean = false)
 
 /**
- * The starter library that ships with the keyboard. The user can remove any of these and add
- * their own words from Settings; this list is only the starting point.
- *
- * Only single words are supported (a phrase would have to be added as separate words).
+ * Words that ship with the keyboard. This build ships with none: the list starts empty, like a
+ * new install, and the person adds or imports their own words in Settings.
  */
 object BlockedWordsLibrary {
-    val builtIn: List<BlockedEntry> = listOf(
-        // English
-        BlockedEntry("porn", matchInside = true), // also blocks porno, pornhub, pornography...
-        BlockedEntry("xxx"),
-        BlockedEntry("xvideos"),
-        BlockedEntry("xnxx"),
-        BlockedEntry("xhamster"),
-        BlockedEntry("redtube"),
-        BlockedEntry("hentai"),
-        BlockedEntry("nude"),
-        BlockedEntry("nudes"),
-
-        // Bengali
-        BlockedEntry("পর্ন", matchInside = true), // also blocks পর্নো, পর্নোগ্রাফি...
-        BlockedEntry("ন্যুড"),
-    )
+    val builtIn: List<BlockedEntry> = emptyList()
 }

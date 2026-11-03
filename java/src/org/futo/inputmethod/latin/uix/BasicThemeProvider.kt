@@ -45,6 +45,8 @@ val SpacebarColorSetting = SettingsKey(stringPreferencesKey("spacebar_color"), "
 
 val KeyboardHeightMultiplierSetting = SettingsKey(floatPreferencesKey("keyboardHeightMultiplier"), 1.0f)
 val KeyboardBottomOffsetSetting = SettingsKey(floatPreferencesKey("keyboardOffset"), 0.0f)
+/** "off", "left" or "right": a narrower keyboard pushed to one side for typing with one hand. */
+val OneHandedModeSetting = SettingsKey(stringPreferencesKey("oneHandedMode"), "off")
 
 fun adjustColorBrightnessForContrast(bgColor: Int, fgColor: Int, desiredContrast: Float, adjustSaturation: Boolean = false): Int {
     // Convert RGB colors to HSL
@@ -168,6 +170,7 @@ class BasicThemeProvider(
     val keyHintColor: String
     val keyboardHeight: Float
     val keyboardFont: String
+    val oneHandedMode: String
     val spacebarColorPref: String
     override val keyboardTypeface: Typeface?
 
@@ -178,6 +181,7 @@ class BasicThemeProvider(
                 || np.get(KeyHintColorSetting) != keyHintColor
                 || np.get(KeyboardHeightMultiplierSetting) != keyboardHeight
                 || np.get(KeyboardFontSetting) != keyboardFont
+                || np.get(OneHandedModeSetting) != oneHandedMode
                 || np.get(SpacebarColorSetting) != spacebarColorPref
     }
 
@@ -212,6 +216,7 @@ class BasicThemeProvider(
         keyHintColor = context.getSettingBlocking(KeyHintColorSetting)
         keyboardHeight = context.getSettingBlocking(KeyboardHeightMultiplierSetting)
         keyboardFont = context.getSettingBlocking(KeyboardFontSetting)
+        oneHandedMode = context.getSettingBlocking(OneHandedModeSetting)
         spacebarColorPref = context.getSettingBlocking(SpacebarColorSetting)
         val customSpaceColor = when (spacebarColorPref) {
             "red" -> OrbitThemeHelper.COLOR_RED

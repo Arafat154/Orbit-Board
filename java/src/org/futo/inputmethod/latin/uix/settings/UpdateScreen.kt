@@ -164,7 +164,7 @@ private suspend fun downloadAndInstall(scope: CoroutineScope, context: Context, 
 
     var inputStream: InputStream? = null;
     try {
-        val httpClient = OkHttpClient()
+        val httpClient = org.futo.inputmethod.network.NetworkGuard.blockedClient()
         val request = Request.Builder().method("GET", null).url(updateResult.apkUrl).build()
 
         val response = httpClient.newCall(request).execute()

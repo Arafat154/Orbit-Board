@@ -59,6 +59,17 @@ private const val MAX_IMPORT_BYTES = 3_000_000
 /** Long lists are shown in part so the screen stays fast; search finds the rest. */
 private const val DISPLAY_LIMIT = 100
 
+/** Hides the middle of a word, so a list of explicit words is not readable by accident. */
+private fun maskForDisplay(word: String): String {
+    val points = word.codePoints().toArray()
+    if (points.size <= 2) return "\u2022".repeat(points.size)
+    val sb = StringBuilder()
+    sb.appendCodePoint(points.first())
+    repeat(points.size - 2) { sb.append('\u2022') }
+    sb.appendCodePoint(points.last())
+    return sb.toString()
+}
+
 /** Reads a small text file. Returns null if it is too big or does not look like text. */
 private fun readTextFile(context: android.content.Context, uri: Uri): String? {
     context.contentResolver.openInputStream(uri)?.use { input ->
@@ -100,6 +111,10 @@ fun BlockedWordsScreen(navController: NavHostController = rememberNavController(
     var addError by remember { mutableStateOf<String?>(null) }
     var search by remember { mutableStateOf("") }
     var importMessage by remember { mutableStateOf<String?>(null) }
+    var showWords by remember { mutableStateOf(false) }
+    var libraryOpen by remember { mutableStateOf(false) }
+    var duplicateWord by remember { mutableStateOf<String?>(null) }
+    fun display(word: String) = if (showWords) word else maskForDisplay(word)
     val scope = rememberCoroutineScope()
 
     val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -143,9 +158,18 @@ fun BlockedWordsScreen(navController: NavHostController = rememberNavController(
         )
     }
 
+    duplicateWord?.let { word ->
+        AlertDialog(
+            onDismissRequest = { duplicateWord = null },
+            title = { Text("Already in your list") },
+            text = { Text("\"${if (showWords) word else maskForDisplay(word)}\" is already blocked, so it was not added again.") },
+            confirmButton = { TextButton(onClick = { duplicateWord = null }) { Text("OK") } },
+        )
+    }
+
     fun askToRemove(entry: BlockedEntry, remove: () -> Unit) {
         pendingRemoval = PendingRemoval(
-            title = "Remove \"${entry.word}\"?",
+            title = "Remove \"${display(entry.word)}\"?",
             message = "This word will no longer be blocked. You can confirm after the wait " +
                     "finishes. Take a moment to be sure.",
             confirmLabel = "Remove",
@@ -157,8 +181,8 @@ fun BlockedWordsScreen(navController: NavHostController = rememberNavController(
     fun matchesSearch(entry: BlockedEntry) =
         query.isEmpty() || entry.word.contains(query, ignoreCase = true)
 
-    val activeBuiltIn = state.builtIn.filter { it.word !in state.removedBuiltIn && matchesSearch(it) }
-    val myWords = state.userWords.filter { matchesSearch(it) }
+    val allWords = (state.builtIn.filter { it.word !in state.removedBuiltIn } + state.userWords)
+    val shownWords = allWords.filter { matchesSearch(it) }
 
     ScrollableList {
         ScreenTitle("Blocked words", showBack = true, navController)
@@ -213,6 +237,9 @@ fun BlockedWordsScreen(navController: NavHostController = rememberNavController(
                 val result = BlockedWordsStore.addWord(newWord, matchLonger)
                 if (result == AddResult.ADDED) {
                     newWord = ""
+                    addError = null
+                } else if (result == AddResult.DUPLICATE) {
+                    duplicateWord = newWord.trim()
                     addError = null
                 } else {
                     addError = when (result) {
@@ -284,33 +311,38 @@ fun BlockedWordsScreen(navController: NavHostController = rememberNavController(
             singleLine = true,
         )
 
-        SectionLabel("My words (${state.userWords.size})")
-        if (state.userWords.isEmpty()) {
-            Tip("You have not added any words yet. Words you add above appear here.")
-        } else if (myWords.isEmpty()) {
-            Tip("No words match your search.")
+        SectionLabel("Library (${allWords.size} word${if (allWords.size == 1) "" else "s"})")
+        val open = libraryOpen || query.isNotEmpty()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(onClick = { libraryOpen = !libraryOpen }) {
+                Text(if (open) "Hide library" else "Open library")
+            }
+            Spacer(Modifier.weight(1f))
+            Text("Show words", style = MaterialTheme.typography.bodySmall)
+            Checkbox(checked = showWords, onCheckedChange = { showWords = it })
         }
-        myWords.take(DISPLAY_LIMIT).forEach { entry ->
-            WordRow(entry) { askToRemove(entry) { BlockedWordsStore.removeUserWord(entry.word) } }
-        }
-        if (myWords.size > DISPLAY_LIMIT) {
-            Tip("Showing $DISPLAY_LIMIT of ${myWords.size} words. Use the search box to find others.")
-        }
-
-        SectionLabel("Starter library")
-        if (activeBuiltIn.isEmpty()) {
-            Tip(if (query.isEmpty()) "No starter words are active." else "No words match your search.")
-        }
-        activeBuiltIn.forEach { entry ->
-            WordRow(entry) { askToRemove(entry) { BlockedWordsStore.removeBuiltInWord(entry.word) } }
-        }
-
-        if (state.removedBuiltIn.isNotEmpty()) {
-            TextButton(
-                onClick = { BlockedWordsStore.restoreBuiltInWords() },
-                modifier = Modifier.padding(horizontal = 8.dp),
-            ) {
-                Text("Restore ${state.removedBuiltIn.size} removed starter word(s)")
+        if (allWords.isEmpty()) {
+            Tip("Your list is empty. Add a word above or import a file. Nothing is blocked until you do.")
+        } else if (!open) {
+            Tip("The library is closed. Words are hidden here so nobody sees them by accident.")
+        } else {
+            if (shownWords.isEmpty()) Tip("No words match your search.")
+            shownWords.take(DISPLAY_LIMIT).forEach { entry ->
+                val isUser = entry in state.userWords
+                WordRow(entry, display(entry.word)) {
+                    askToRemove(entry) {
+                        if (isUser) BlockedWordsStore.removeUserWord(entry.word)
+                        else BlockedWordsStore.removeBuiltInWord(entry.word)
+                    }
+                }
+            }
+            if (shownWords.size > DISPLAY_LIMIT) {
+                Tip("Showing $DISPLAY_LIMIT of ${shownWords.size} words. Use the search box to find others.")
             }
         }
 
@@ -329,13 +361,13 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun WordRow(entry: BlockedEntry, onRemove: () -> Unit) {
+private fun WordRow(entry: BlockedEntry, label: String, onRemove: () -> Unit) {
     SettingItem(
-        title = entry.word,
+        title = label,
         subtitle = if (entry.matchInside) "Also blocks longer words starting or ending with it" else null,
     ) {
         IconButton(onClick = onRemove) {
-            Icon(Icons.Default.Clear, contentDescription = "Remove ${entry.word}")
+            Icon(Icons.Default.Clear, contentDescription = "Remove word")
         }
     }
 }

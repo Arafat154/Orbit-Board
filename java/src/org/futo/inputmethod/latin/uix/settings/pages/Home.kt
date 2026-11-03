@@ -428,6 +428,32 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                         .background(DividerColor)
                 )
                 NavigationItem(
+                    title = "GIF search",
+                    subtitle = "Add your Giphy key",
+                    style = NavigationItemStyle.HomeTertiary,
+                    navigate = { navController.navigate("gifSettings") },
+                    icon = painterResource(id = R.drawable.ic_gif)
+                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(DividerColor)
+                )
+                NavigationItem(
+                    title = "Backup and restore",
+                    subtitle = "Save your words and themes to a file",
+                    style = NavigationItemStyle.HomeTertiary,
+                    navigate = { navController.navigate("backup") },
+                    icon = painterResource(id = R.drawable.ic_backup)
+                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(DividerColor)
+                )
+                NavigationItem(
                     title = "Announcements",
                     style = NavigationItemStyle.HomeSecondary,
                     navigate = {

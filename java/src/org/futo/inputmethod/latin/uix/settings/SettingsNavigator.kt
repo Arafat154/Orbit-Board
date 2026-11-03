@@ -57,6 +57,8 @@ fun SettingsNavigator(
         composable("devtextedit") { DevEditTextVariationsScreen(navController) }
         composable("blacklist") { BlacklistScreen(navController) }
         composable("blockedWords") { BlockedWordsScreen(navController) }
+        composable("gifSettings") { org.futo.inputmethod.latin.uix.settings.pages.GifSettingsScreen(navController) }
+        composable("backup") { org.futo.inputmethod.latin.uix.settings.pages.BackupScreen(navController) }
         composable("customTheme/{id}") { entry ->
             org.futo.inputmethod.latin.uix.settings.pages.CustomThemeScreen(
                 navController,

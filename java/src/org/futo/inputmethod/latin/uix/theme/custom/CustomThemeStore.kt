@@ -110,6 +110,16 @@ object CustomThemeStore {
         }
     }
 
+    /** The saved photo file's bytes (for backups), or null. */
+    fun photoBytes(context: Context, theme: CustomTheme): ByteArray? {
+        if (!theme.hasPhoto) return null
+        return try {
+            photoFile(context, theme.id, theme.rev).readBytes()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /**
      * Reads a picture chosen by the user and shrinks it so it is cheap to keep and draw.
      * Returns null if it can't be read. Call from a background thread.

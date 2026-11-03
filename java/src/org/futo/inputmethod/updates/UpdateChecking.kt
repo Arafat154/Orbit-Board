@@ -25,7 +25,7 @@ suspend fun checkForUpdate(): UpdateResult? {
     if(!BuildConfig.UPDATE_CHECKING) return null
 
     return withContext(Dispatchers.IO) {
-        val httpClient = OkHttpClient()
+        val httpClient = org.futo.inputmethod.network.NetworkGuard.blockedClient()
 
         val request = Request.Builder().method("GET", null).url(UPDATE_URL).build()
 

@@ -32,6 +32,8 @@ object UpdateChecker {
     val latestUpdate: StateFlow<AppUpdate?> = _latestUpdate.asStateFlow()
 
     suspend fun checkForUpdate(currentVersion: String = BuildConfig.VERSION_NAME): Result<AppUpdate> = withContext(Dispatchers.IO) {
+        // Update checks are switched off in this build (it only uses the internet for Translate and GIF search).
+        return@withContext Result.failure<AppUpdate>(IllegalStateException("Update checks are turned off"))
         _isChecking.value = true
         try {
             // 1. Try dedicated raw JSON endpoint

@@ -252,7 +252,7 @@ fun Context.fileNeedsDownloading(file: String): Boolean {
 
 class DownloadActivity : ComponentActivity() {
     private lateinit var modelsToDownload: List<ModelInfo>
-    private val httpClient = OkHttpClient()
+    private val httpClient = org.futo.inputmethod.network.NetworkGuard.blockedClient()
     private var isDownloading = false
 
     private val themeOption: MutableState<ThemeOption?> = mutableStateOf(null)

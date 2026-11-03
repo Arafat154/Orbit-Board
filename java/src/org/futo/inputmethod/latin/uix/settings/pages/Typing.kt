@@ -61,6 +61,7 @@ import org.futo.inputmethod.latin.uix.KeyboardBottomOffsetSetting
 import org.futo.inputmethod.latin.uix.KeyboardFontSetting
 import org.futo.inputmethod.latin.uix.SpacebarColorSetting
 import org.futo.inputmethod.latin.uix.KeyboardHeightMultiplierSetting
+import org.futo.inputmethod.latin.uix.OneHandedModeSetting
 import org.futo.inputmethod.latin.uix.PreferenceUtils
 import org.futo.inputmethod.latin.uix.SHOW_EMOJI_SUGGESTIONS
 import org.futo.inputmethod.latin.uix.SettingsKey
@@ -147,6 +148,16 @@ fun ResizeScreen(navController: NavHostController = rememberNavController()) {
                 transform = { it },
                 indicator = { "${String.format("%.1f", it)} dp" },
                 steps = 9
+            )
+
+            SettingRadio(
+                title = "One-handed mode",
+                options = listOf("off", "left", "right"),
+                optionNames = listOf("Off", "Keyboard on the left", "Keyboard on the right"),
+                setting = useDataStore(
+                    key = OneHandedModeSetting.key,
+                    default = OneHandedModeSetting.default
+                )
             )
 
             AndroidTextInput(allowPredictions = false)

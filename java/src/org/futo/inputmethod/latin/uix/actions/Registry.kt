@@ -31,7 +31,9 @@ val AllActionsMap = mapOf(
     "cut" to CutAction,
     "copy" to CopyAction,
     "select_all" to SelectAllAction,
-    "more" to MoreActionsAction
+    "more" to MoreActionsAction,
+    "gif_search" to GifSearchAction,
+    "one_handed" to OneHandedAction
 )
 
 val ActionToId = AllActionsMap.entries.associate { it.value to it.key }
