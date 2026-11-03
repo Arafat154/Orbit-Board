@@ -59,3 +59,9 @@ val ThemeOptions = mapOf(
 )
 
 val ThemeOptionKeys = ThemeOptions.keys
+
+/** Finds a built-in theme, or one of the user's own custom themes. */
+fun findThemeOption(context: Context, key: String?): ThemeOption? {
+    if (key == null) return null
+    return ThemeOptions[key] ?: org.futo.inputmethod.latin.uix.theme.custom.CustomThemeStore.optionFor(context, key)
+}

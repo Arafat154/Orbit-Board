@@ -21,8 +21,10 @@ fun ThemeScreen(navController: NavHostController = rememberNavController()) {
     val context = LocalContext.current
     Column(modifier = Modifier.fillMaxSize()) {
         ScreenTitle("Theme", showBack = true, navController)
-        ThemePicker {
-            setTheme(it.key)
-        }
+        ThemePicker(
+            onSelected = { setTheme(it.key) },
+            onCreateCustom = { navController.navigate("customTheme/new") },
+            onEditCustom = { navController.navigate("customTheme/$it") },
+        )
     }
 }

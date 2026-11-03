@@ -33,6 +33,7 @@ import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 
 import org.futo.inputmethod.compat.InputConnectionCompatUtils;
+import org.futo.inputmethod.latin.blocklist.BlockedWordsStore;
 import org.futo.inputmethod.latin.common.Constants;
 import org.futo.inputmethod.latin.common.UnicodeSurrogate;
 import org.futo.inputmethod.latin.common.StringUtils;
@@ -310,9 +311,12 @@ public final class RichInputConnection implements PrivateCommandPerformer {
      * @param text The text to commit. This may include styles.
      * @param newCursorPosition The new cursor position around the text.
      */
-    public void commitText(final CharSequence text, final int newCursorPosition) {
+    public void commitText(final CharSequence originalText, final int newCursorPosition) {
         if (DEBUG_BATCH_NESTING) checkBatchEdit();
         if (DEBUG_PREVIOUS_TEXT) checkConsistencyForDebug();
+        // Blocked words never reach the text box: typed, pasted or spoken, they become ***.
+        // Returns the very same object (keeping any styling) when nothing is blocked.
+        final CharSequence text = BlockedWordsStore.maskText(originalText);
         mCommittedTextBeforeComposingText.append(text);
         // TODO: the following is exceedingly error-prone. Right now when the cursor is in the
         // middle of the composing word mComposingText only holds the part of the composing text
@@ -617,9 +621,12 @@ public final class RichInputConnection implements PrivateCommandPerformer {
         }
     }
 
-    public void setComposingText(final CharSequence text, final int newCursorPosition) {
+    public void setComposingText(final CharSequence originalText, final int newCursorPosition) {
         if (DEBUG_BATCH_NESTING) checkBatchEdit();
         if (DEBUG_PREVIOUS_TEXT) checkConsistencyForDebug();
+        // Also hide a blocked word while it is still being typed, so that sending the message
+        // before pressing space cannot leak it.
+        final CharSequence text = BlockedWordsStore.maskText(originalText);
         mExpectedSelStart += text.length() - mComposingText.length();
         mExpectedSelEnd = mExpectedSelStart;
         mComposingText.setLength(0);

@@ -119,7 +119,7 @@ fun UixThemeAuto(content: @Composable () -> Unit) {
 
     val themeIdx = useDataStoreValue(THEME_KEY)
 
-    val theme: ThemeOption = themeIdx?.let { ThemeOptions[it].ensureAvailable(context) }
+    val theme: ThemeOption = themeIdx?.let { findThemeOption(context, it).ensureAvailable(context) }
         ?: VoiceInputTheme
 
     val colors = remember(theme.key) { theme.obtainColors(context) }

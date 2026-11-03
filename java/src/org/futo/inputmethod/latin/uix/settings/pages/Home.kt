@@ -415,6 +415,19 @@ fun HomeScreen(navController: NavHostController = rememberNavController()) {
                         .background(DividerColor)
                 )
                 NavigationItem(
+                    title = "Blocked words",
+                    subtitle = "Replace chosen words with ***",
+                    style = NavigationItemStyle.HomeTertiary,
+                    navigate = { navController.navigate("blockedWords") },
+                    icon = painterResource(id = R.drawable.ic_blocked_words)
+                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(DividerColor)
+                )
+                NavigationItem(
                     title = "Announcements",
                     style = NavigationItemStyle.HomeSecondary,
                     navigate = {

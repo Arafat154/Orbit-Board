@@ -27,7 +27,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.material3.TextButton
+import org.futo.inputmethod.latin.uix.theme.custom.CustomThemeStore
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -231,8 +235,16 @@ fun AddCustomThemeButton(onClick: () -> Unit = { }) {
 }
 
 @Composable
-fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
+fun ThemePicker(
+    onSelected: (ThemeOption) -> Unit,
+    onCreateCustom: () -> Unit = { },
+    onEditCustom: (String) -> Unit = { },
+) {
     val context = LocalContext.current
+    val customThemes by remember {
+        CustomThemeStore.init(context)
+        CustomThemeStore.themes
+    }.collectAsState()
 
     val currentTheme = useDataStore(THEME_KEY.key, "").value
 
@@ -272,15 +284,34 @@ fun ThemePicker(onSelected: (ThemeOption) -> Unit) {
                     }
                 }
 
+                items(customThemes.size) { index ->
+                    val custom = customThemes[index]
+                    val option = remember(custom.key) { CustomThemeStore.optionFor(custom) }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        ThemePreview(
+                            option,
+                            isSelected = custom.id == CustomThemeStore.find(context, currentTheme)?.id,
+                            overrideName = custom.name,
+                        ) {
+                            onSelected(option)
+                        }
+                        TextButton(onClick = { onEditCustom(custom.id) }) {
+                            Text("Edit")
+                        }
+                    }
+                }
+
                 item {
                     AddCustomThemeButton {
-                        // TODO: Custom themes
-                        val toast = Toast.makeText(
-                            context,
-                            "Custom themes coming eventually",
-                            Toast.LENGTH_SHORT
-                        )
-                        toast.show()
+                        if (customThemes.size >= CustomThemeStore.MAX_THEMES) {
+                            Toast.makeText(
+                                context,
+                                "You can save up to ${CustomThemeStore.MAX_THEMES} custom themes. Edit or delete one first.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            onCreateCustom()
+                        }
                     }
                 }
 

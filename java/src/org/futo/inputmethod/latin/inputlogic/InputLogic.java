@@ -48,6 +48,7 @@ import org.futo.inputmethod.latin.SuggestedWords;
 import org.futo.inputmethod.latin.SuggestedWords.SuggestedWordInfo;
 import org.futo.inputmethod.latin.WordComposer;
 import org.futo.inputmethod.latin.bengali.RidmikParser;
+import org.futo.inputmethod.latin.blocklist.BlockedWordsStore;
 import org.futo.inputmethod.latin.common.Constants;
 import org.futo.inputmethod.latin.common.InputPointers;
 import org.futo.inputmethod.latin.common.StringUtils;
@@ -2558,8 +2559,16 @@ public final class InputLogic {
      * @param commitType the type of the commit, as one of LastComposedWord.COMMIT_TYPE_*
      * @param separatorString the separator that's causing the commit, or NOT_A_SEPARATOR if none.
      */
-    private void commitChosenWord(final SettingsValues settingsValues, final String chosenWord,
+    private void commitChosenWord(final SettingsValues settingsValues, final String requestedWord,
             final int commitType, final String separatorString, final int importance) {
+        // Blocked words are replaced with *** instead of being written. A suggestion the user
+        // tapped is judged by what they tapped; anything typed is also judged by the raw letters
+        // typed (so Latin letters typed with the Bengali phonetic layout are caught too).
+        final boolean replacedBlockedWord = BlockedWordsStore.isBlocked(requestedWord)
+                || (commitType != LastComposedWord.COMMIT_TYPE_MANUAL_PICK
+                        && mWordComposer.isComposingWord()
+                        && BlockedWordsStore.isBlocked(mWordComposer.getTypedWord()));
+        final String chosenWord = replacedBlockedWord ? BlockedWordsStore.MASK : requestedWord;
         long startTimeMillis = 0;
         if (DebugFlags.DEBUG_ENABLED) {
             startTimeMillis = System.currentTimeMillis();
@@ -2597,8 +2606,10 @@ public final class InputLogic {
                     + "Connection.commitText");
             startTimeMillis = System.currentTimeMillis();
         }
-        // Add the word to the user history dictionary
-        performAdditionToUserHistoryDictionary(settingsValues, chosenWord, ngramContext, importance);
+        // Add the word to the user history dictionary (never for a blocked word)
+        if (!replacedBlockedWord) {
+            performAdditionToUserHistoryDictionary(settingsValues, chosenWord, ngramContext, importance);
+        }
         if (DebugFlags.DEBUG_ENABLED) {
             long runTimeMillis = System.currentTimeMillis() - startTimeMillis;
             Log.d(TAG, "commitChosenWord() : " + runTimeMillis + " ms to run "
@@ -2616,6 +2627,10 @@ public final class InputLogic {
             Log.d(TAG, "commitChosenWord() : " + runTimeMillis + " ms to run "
                     + "WordComposer.commitWord()");
             startTimeMillis = System.currentTimeMillis();
+        }
+        if (replacedBlockedWord) {
+            // Pressing backspace right after must not bring the blocked word back.
+            mLastComposedWord.deactivate();
         }
     }
 

@@ -45,6 +45,7 @@ import org.futo.inputmethod.latin.uix.getSetting
 import org.futo.inputmethod.latin.uix.getSettingFlow
 import org.futo.inputmethod.latin.uix.theme.ThemeOption
 import org.futo.inputmethod.latin.uix.theme.ThemeOptions
+import org.futo.inputmethod.latin.uix.theme.findThemeOption
 import org.futo.inputmethod.latin.uix.theme.UixThemeAuto
 import org.futo.inputmethod.latin.uix.theme.presets.VoiceInputTheme
 import org.futo.inputmethod.latin.xlm.ModelPaths
@@ -202,7 +203,7 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
 
         lifecycleScope.launch {
             getSettingFlow(THEME_KEY).collect {
-                val themeOptionFromSettings = ThemeOptions[it]
+                val themeOptionFromSettings = findThemeOption(this@SettingsActivity, it)
                 val themeOption = when {
                     themeOptionFromSettings == null -> VoiceInputTheme
                     !themeOptionFromSettings.available(this@SettingsActivity) -> VoiceInputTheme
@@ -220,7 +221,7 @@ class SettingsActivity : ComponentActivity(), DynamicThemeProviderOwner {
         }
 
         deferGetSetting(THEME_KEY) {
-            val themeOptionFromSettings = ThemeOptions[it]
+            val themeOptionFromSettings = findThemeOption(this@SettingsActivity, it)
             val themeOption = when {
                 themeOptionFromSettings == null -> VoiceInputTheme
                 !themeOptionFromSettings.available(this) -> VoiceInputTheme

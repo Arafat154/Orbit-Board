@@ -55,6 +55,7 @@ import org.futo.inputmethod.latin.uix.deferGetSetting
 import org.futo.inputmethod.latin.uix.settings.useDataStore
 import org.futo.inputmethod.latin.uix.theme.ThemeOption
 import org.futo.inputmethod.latin.uix.theme.ThemeOptions
+import org.futo.inputmethod.latin.uix.theme.findThemeOption
 import org.futo.inputmethod.latin.uix.theme.UixThemeWrapper
 import org.futo.inputmethod.latin.uix.theme.presets.VoiceInputTheme
 import org.futo.voiceinput.shared.ui.theme.Typography
@@ -261,7 +262,7 @@ class DownloadActivity : ComponentActivity() {
         setContent {
             themeOption.value?.let { themeOption ->
                 val themeIdx = useDataStore(key = THEME_KEY.key, default = themeOption.key)
-                val theme: ThemeOption = ThemeOptions[themeIdx.value] ?: themeOption
+                val theme: ThemeOption = findThemeOption(LocalContext.current, themeIdx.value) ?: themeOption
                 UixThemeWrapper(theme.obtainColors(LocalContext.current)) {
                     // A surface container using the 'background' color from the theme
                     Surface(
@@ -417,7 +418,7 @@ class DownloadActivity : ComponentActivity() {
         isDownloading = false
 
         deferGetSetting(THEME_KEY) {
-            val themeOptionFromSettings = ThemeOptions[it]
+            val themeOptionFromSettings = findThemeOption(this, it)
             val themeOption = when {
                 themeOptionFromSettings == null -> VoiceInputTheme
                 !themeOptionFromSettings.available(this) -> VoiceInputTheme

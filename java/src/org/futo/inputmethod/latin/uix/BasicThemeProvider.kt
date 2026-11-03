@@ -28,6 +28,8 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.google.android.material.color.DynamicColors
 import org.futo.inputmethod.keyboard.internal.KeyboardIconsSet
+import org.futo.inputmethod.latin.uix.theme.custom.CustomThemeStore
+import org.futo.inputmethod.latin.uix.theme.custom.PhotoBackgroundDrawable
 import org.futo.inputmethod.latin.R
 import org.futo.inputmethod.latin.uix.actions.AllActions
 import org.futo.inputmethod.latin.uix.actions.AllActionsMap
@@ -254,8 +256,19 @@ class BasicThemeProvider(
             colorScheme.surface.toArgb()
         }
 
+        // A custom theme may have a photo behind the keys; keys are then slightly see-through.
+        val customTheme = CustomThemeStore.find(context, currentThemeKey)
+        val backgroundPhoto = customTheme?.let { CustomThemeStore.loadPhoto(context, it) }
+        fun withPhotoAlpha(@ColorInt c: Int): Int {
+            return if(backgroundPhoto != null && c != transparent) {
+                ColorUtils.setAlphaComponent(c, 0xA6)
+            } else {
+                c
+            }
+        }
+
         val ratio = 1.5f
-        val keyColor = if(keyBorders) {
+        val keyColorOpaque = if(keyBorders) {
             var c = adjustColorBrightnessForContrast(primaryKeyboardColor, primaryKeyboardColor, ratio)
             if(c == primaryKeyboardColor) {
                 // May happen if the color is already 100% white
@@ -266,13 +279,14 @@ class BasicThemeProvider(
             transparent
         }
 
+        val keyColor = withPhotoAlpha(keyColorOpaque)
         this.keyColor = keyColor
 
-        val functionalKeyColor = if(keyBorders) {
+        val functionalKeyColor = withPhotoAlpha(if(keyBorders) {
             adjustColorBrightnessForContrast(primaryKeyboardColor, primaryKeyboardColor, ratio / 2.0f + 0.5f, adjustSaturation = true)
         } else {
             transparent
-        }
+        })
 
         val enterKeyBackground = if(expertMode) { functionalKeyColor } else { primary }
         val enterKeyForeground = if(expertMode) { onBackgroundThird } else { onPrimary }
@@ -342,6 +356,8 @@ class BasicThemeProvider(
 
         keyboardBackground = if (isOrbitTheme) {
             coloredRectangle(0xFF000000.toInt())
+        } else if (backgroundPhoto != null && customTheme != null) {
+            PhotoBackgroundDrawable(backgroundPhoto, primaryKeyboardColor, customTheme.dim)
         } else {
             coloredRectangle(primaryKeyboardColor)
         }

@@ -13,6 +13,7 @@ import org.futo.inputmethod.latin.uix.ErrorDialog
 import org.futo.inputmethod.latin.uix.InfoDialog
 import org.futo.inputmethod.latin.uix.settings.pages.AdvancedParametersScreen
 import org.futo.inputmethod.latin.uix.settings.pages.BlacklistScreen
+import org.futo.inputmethod.latin.uix.settings.pages.BlockedWordsScreen
 import org.futo.inputmethod.latin.uix.settings.pages.DevEditTextVariationsScreen
 import org.futo.inputmethod.latin.uix.settings.pages.DeveloperScreen
 import org.futo.inputmethod.latin.uix.settings.pages.HelpScreen
@@ -55,6 +56,13 @@ fun SettingsNavigator(
         composable("developer") { DeveloperScreen(navController) }
         composable("devtextedit") { DevEditTextVariationsScreen(navController) }
         composable("blacklist") { BlacklistScreen(navController) }
+        composable("blockedWords") { BlockedWordsScreen(navController) }
+        composable("customTheme/{id}") { entry ->
+            org.futo.inputmethod.latin.uix.settings.pages.CustomThemeScreen(
+                navController,
+                entry.arguments?.getString("id") ?: "new"
+            )
+        }
 
         dialog("error/{title}/{body}") {
             ErrorDialog(

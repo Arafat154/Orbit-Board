@@ -24,6 +24,7 @@ import static org.futo.inputmethod.latin.define.DecoderSpecificConstants.SHOULD_
 
 import org.futo.inputmethod.keyboard.Keyboard;
 import org.futo.inputmethod.latin.SuggestedWords.SuggestedWordInfo;
+import org.futo.inputmethod.latin.blocklist.BlockedWordsStore;
 import org.futo.inputmethod.latin.common.Constants;
 import org.futo.inputmethod.latin.common.StringUtils;
 import org.futo.inputmethod.latin.define.DebugFlags;
@@ -164,6 +165,8 @@ public final class Suggest {
         final ArrayList<SuggestedWordInfo> suggestionsContainer =
                 getTransformedSuggestedWordInfoList(wordComposer, suggestionResults,
                         trailingSingleQuotesCount, locale);
+        // Blocked words are never offered as suggestions.
+        BlockedWordsStore.removeBlockedSuggestions(suggestionsContainer);
 
         boolean foundInDictionary = false;
         Dictionary sourceDictionaryOfRemovedWord = null;
@@ -338,6 +341,8 @@ public final class Suggest {
             suggestionsContainer.add(1, rejected);
         }
         SuggestedWordInfo.removeDups(null /* typedWord */, suggestionsContainer);
+        // Blocked words are never offered as suggestions.
+        BlockedWordsStore.removeBlockedSuggestions(suggestionsContainer);
 
         // For some reason some suggestions with MIN_VALUE are making their way here.
         // TODO: Find a more robust way to detect distracters.
