@@ -236,9 +236,9 @@ fun AddCustomThemeButton(onClick: () -> Unit = { }) {
 
 @Composable
 fun ThemePicker(
+    onCreateCustom: (() -> Unit)? = null,
+    onEditCustom: ((String) -> Unit)? = null,
     onSelected: (ThemeOption) -> Unit,
-    onCreateCustom: () -> Unit = { },
-    onEditCustom: (String) -> Unit = { },
 ) {
     val context = LocalContext.current
     val customThemes by remember {
@@ -295,13 +295,15 @@ fun ThemePicker(
                         ) {
                             onSelected(option)
                         }
-                        TextButton(onClick = { onEditCustom(custom.id) }) {
-                            Text("Edit")
+                        if (onEditCustom != null) {
+                            TextButton(onClick = { onEditCustom(custom.id) }) {
+                                Text("Edit")
+                            }
                         }
                     }
                 }
 
-                item {
+                if (onCreateCustom != null) item {
                     AddCustomThemeButton {
                         if (customThemes.size >= CustomThemeStore.MAX_THEMES) {
                             Toast.makeText(
