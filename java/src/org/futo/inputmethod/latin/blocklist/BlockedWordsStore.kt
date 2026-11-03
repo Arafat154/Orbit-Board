@@ -37,6 +37,29 @@ object BlockedWordsStore {
 
     enum class AddResult { ADDED, EMPTY, HAS_SPACES, TOO_SHORT, TOO_SHORT_FOR_INSIDE, DUPLICATE }
 
+    /** What happened when a whole list of words was imported. */
+    data class ImportResult(
+        val added: Int,
+        val alreadyThere: Int,
+        /** Too short, or over the size limit. */
+        val skipped: Int,
+    )
+
+    /** Most words the user list can hold; keeps typing fast. */
+    const val MAX_USER_WORDS = 20000
+
+    /**
+     * Turns the text of a file into separate words. Words may be separated by new lines, commas,
+     * semicolons, tabs or spaces, so a simple list, a CSV or a one-column sheet saved as text all work.
+     */
+    fun parseWordList(text: String): List<String> {
+        return text.removePrefix("\uFEFF")
+            .split(Regex("[\\s,;|]+"))
+            .map { it.trim().trim('"', '\'', '\u201C', '\u201D', '\u2018', '\u2019') }
+            .filter { it.isNotEmpty() }
+            .distinct()
+    }
+
     private var prefs: SharedPreferences? = null
 
     private val _state = MutableStateFlow(State())
@@ -115,6 +138,42 @@ object BlockedWordsStore {
 
         update { it.copy(userWords = it.userWords + BlockedEntry(word, matchInside)) }
         return AddResult.ADDED
+    }
+
+    /** Adds many words at once (for example from a file). Duplicates and bad entries are skipped. */
+    @Synchronized
+    fun addWords(rawWords: List<String>, matchInside: Boolean): ImportResult {
+        val current = _state.value
+        val seen = HashSet<String>()
+        current.builtIn.filter { it.word !in current.removedBuiltIn }
+            .forEach { seen.add(BlockedWordMatcher.normalize(it.word)) }
+        current.userWords.forEach { seen.add(BlockedWordMatcher.normalize(it.word)) }
+
+        val toAdd = ArrayList<BlockedEntry>()
+        var alreadyThere = 0
+        var skipped = 0
+        val room = (MAX_USER_WORDS - current.userWords.size).coerceAtLeast(0)
+        for (raw in rawWords) {
+            val word = raw.trim()
+            val normalized = BlockedWordMatcher.normalize(word)
+            if (word.isEmpty() || word.any { it.isWhitespace() } || normalized.length < 2 ||
+                (matchInside && normalized.length < 3)
+            ) {
+                skipped++
+                continue
+            }
+            if (!seen.add(normalized)) {
+                alreadyThere++
+                continue
+            }
+            if (toAdd.size >= room) {
+                skipped++
+                continue
+            }
+            toAdd.add(BlockedEntry(word, matchInside))
+        }
+        if (toAdd.isNotEmpty()) update { it.copy(userWords = it.userWords + toAdd) }
+        return ImportResult(toAdd.size, alreadyThere, skipped)
     }
 
     @Synchronized

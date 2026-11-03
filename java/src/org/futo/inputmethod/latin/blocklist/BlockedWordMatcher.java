@@ -34,6 +34,7 @@ public final class BlockedWordMatcher {
     private final Set<String> exact = new HashSet<>();
     private final Set<String> collapsedExact = new HashSet<>();
     private final List<String> extended = new ArrayList<>();
+    private final Set<String> extendedSeen = new HashSet<>();
 
     /**
      * @param exactWords words that must match a whole word
@@ -51,7 +52,7 @@ public final class BlockedWordMatcher {
         for (final String word : extendedWords) {
             final String collapsed = collapseRuns(normalize(word));
             // Too-short entries would block far too many ordinary words, so they are ignored.
-            if (collapsed.length() >= MIN_COLLAPSED_LENGTH && !extended.contains(collapsed)) {
+            if (collapsed.length() >= MIN_COLLAPSED_LENGTH && extendedSeen.add(collapsed)) {
                 extended.add(collapsed);
             }
         }

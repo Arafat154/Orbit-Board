@@ -1,5 +1,8 @@
 package org.futo.inputmethod.latin.uix.settings.pages
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +18,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -31,7 +36,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import org.futo.inputmethod.latin.blocklist.BlockedEntry
 import org.futo.inputmethod.latin.blocklist.BlockedWordsStore
 import org.futo.inputmethod.latin.blocklist.BlockedWordsStore.AddResult
@@ -43,6 +52,32 @@ import org.futo.inputmethod.latin.uix.settings.Tip
 
 /** How long the user has to wait before a word can be removed or the filter switched off. */
 private const val REMOVAL_WAIT_SECONDS = 30
+
+/** Longest word list file accepted (about 3 MB, hundreds of thousands of words). */
+private const val MAX_IMPORT_BYTES = 3_000_000
+
+/** Long lists are shown in part so the screen stays fast; search finds the rest. */
+private const val DISPLAY_LIMIT = 100
+
+/** Reads a small text file. Returns null if it is too big or does not look like text. */
+private fun readTextFile(context: android.content.Context, uri: Uri): String? {
+    context.contentResolver.openInputStream(uri)?.use { input ->
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        var total = 0
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            total += read
+            if (total > MAX_IMPORT_BYTES) return null
+            out.write(buffer, 0, read)
+        }
+        val bytes = out.toByteArray()
+        if (bytes.any { it == 0.toByte() }) return null
+        return String(bytes, Charsets.UTF_8)
+    }
+    return null
+}
 
 private class PendingRemoval(
     val title: String,
@@ -64,6 +99,35 @@ fun BlockedWordsScreen(navController: NavHostController = rememberNavController(
     var matchLonger by remember { mutableStateOf(false) }
     var addError by remember { mutableStateOf<String?>(null) }
     var search by remember { mutableStateOf("") }
+    var importMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val text = withContext(Dispatchers.IO) {
+                    try { readTextFile(context, uri) } catch (e: Exception) { null }
+                }
+                importMessage = if (text == null) {
+                    "Could not read that file. Use a plain text (.txt) or .csv file under 3 MB."
+                } else {
+                    val words = BlockedWordsStore.parseWordList(text)
+                    if (words.isEmpty()) {
+                        "That file has no words in it."
+                    } else {
+                        val result = withContext(Dispatchers.Default) {
+                            BlockedWordsStore.addWords(words, matchLonger)
+                        }
+                        buildString {
+                            append("Added ${result.added} word(s).")
+                            if (result.alreadyThere > 0) append(" ${result.alreadyThere} were already in the list.")
+                            if (result.skipped > 0) append(" ${result.skipped} were skipped (too short or over the limit).")
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     pendingRemoval?.let { pending ->
         WaitThenConfirmDialog(
@@ -187,6 +251,28 @@ fun BlockedWordsScreen(navController: NavHostController = rememberNavController(
             )
         }
 
+        OutlinedButton(
+            onClick = { filePicker.launch("*/*") },
+            modifier = Modifier.padding(horizontal = 16.dp),
+        ) {
+            Text("Import words from a file")
+        }
+        Text(
+            "Choose a .txt or .csv file with one word per line (commas also work). The box " +
+                    "above decides whether imported words also block longer words. Spreadsheets " +
+                    "(.xlsx) must be saved as .csv first.",
+            modifier = Modifier.padding(start = 16.dp, top = 4.dp, end = 16.dp),
+            style = MaterialTheme.typography.bodySmall,
+        )
+        importMessage?.let {
+            Text(
+                it,
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             value = search,
@@ -204,8 +290,11 @@ fun BlockedWordsScreen(navController: NavHostController = rememberNavController(
         } else if (myWords.isEmpty()) {
             Tip("No words match your search.")
         }
-        myWords.forEach { entry ->
+        myWords.take(DISPLAY_LIMIT).forEach { entry ->
             WordRow(entry) { askToRemove(entry) { BlockedWordsStore.removeUserWord(entry.word) } }
+        }
+        if (myWords.size > DISPLAY_LIMIT) {
+            Tip("Showing $DISPLAY_LIMIT of ${myWords.size} words. Use the search box to find others.")
         }
 
         SectionLabel("Starter library")
