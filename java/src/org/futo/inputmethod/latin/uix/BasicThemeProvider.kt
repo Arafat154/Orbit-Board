@@ -293,8 +293,8 @@ class BasicThemeProvider(
             transparent
         })
 
-        val enterKeyBackground = if(expertMode) { functionalKeyColor } else { primary }
-        val enterKeyForeground = if(expertMode) { onBackgroundThird } else { onPrimary }
+        // The enter and emoji keys look like every other key (no coloured pill).
+        val enterKeyForeground = if(expertMode) { onBackgroundThird } else { onBackground }
 
         val hintColor = if (keyHintColor == "yellow") yellowAccent else onBackgroundHalf
         colors[R.styleable.Keyboard_Key_keyTextColor] = onBackground
@@ -308,7 +308,7 @@ class BasicThemeProvider(
         colors[R.styleable.Keyboard_Key_keyShiftedLetterHintInactivatedColor] = hintColor
         colors[R.styleable.Keyboard_Key_keyShiftedLetterHintActivatedColor] = hintColor
         colors[R.styleable.Keyboard_Key_keyPreviewTextColor] = onSecondary
-        colors[R.styleable.MainKeyboardView_languageOnSpacebarTextColor] = yellowAccent
+        colors[R.styleable.MainKeyboardView_languageOnSpacebarTextColor] = onBackground
         colors[R.styleable.MainKeyboardView_gestureTrailColor] = primary
         colors[R.styleable.MainKeyboardView_slidingKeyInputPreviewColor] = primary
 
@@ -328,7 +328,7 @@ class BasicThemeProvider(
         addIcon(KeyboardIconsSet.NAME_ZWNJ_KEY, R.drawable.sym_keyboard_zwnj_lxx_dark, onBackground)
         addIcon(KeyboardIconsSet.NAME_ZWJ_KEY, R.drawable.sym_keyboard_zwj_lxx_dark, onPrimary)
 
-        addIcon(KeyboardIconsSet.NAME_EMOJI_ACTION_KEY, R.drawable.nth_smile, onPrimary)
+        addIcon(KeyboardIconsSet.NAME_EMOJI_ACTION_KEY, R.drawable.nth_smile, onBackground)
         addIcon(KeyboardIconsSet.NAME_EMOJI_NORMAL_KEY, R.drawable.nth_smile, onBackground)
 
         // Add by name (action_emoji)
@@ -369,8 +369,11 @@ class BasicThemeProvider(
 
         keyBackground = StateListDrawable().apply {
             addStateWithHighlightLayerOnPressed(highlight, intArrayOf(android.R.attr.state_active),
-                coloredRoundedRectangle(enterKeyBackground, dp(128.dp)),
-                cornerRadius = 128.dp
+                if(keyBorders) {
+                    coloredRoundedRectangle(keyColor, dp(8.dp))
+                } else {
+                    coloredRectangle(transparent)
+                }
             )
 
             addStateWithHighlightLayerOnPressed(highlight, intArrayOf(android.R.attr.state_checkable, android.R.attr.state_checked),
